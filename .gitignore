@@ -11,6 +11,7 @@ __pycache__/
 # Virtual environment if you have one
 venv/
 
+*.mp4
 # Windows junk
 Thumbs.db
 desktop.ini

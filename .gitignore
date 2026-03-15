@@ -1,5 +1,16 @@
-.venv
+# AI model weights (large files, auto-downloaded)
+*.pt
+
+# Database (contains real detection data)
+surveillance.db
+
+# Python cache files
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
+
+# Virtual environment if you have one
+venv/
+
+# Windows junk
+Thumbs.db
+desktop.ini

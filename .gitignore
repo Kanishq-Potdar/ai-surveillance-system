@@ -15,3 +15,5 @@ venv/
 # Windows junk
 Thumbs.db
 desktop.ini
+
+alerter.py

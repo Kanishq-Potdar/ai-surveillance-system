@@ -1,0 +1,177 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Surveillance — Charts</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #0f0f0f;
+        color: #e0e0e0;
+        padding: 20px;
+      }
+      h1 {
+        color: #00ff99;
+      }
+
+      a {
+        color: #00ff99;
+        text-decoration: none;
+        font-size: 14px;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .charts-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-top: 24px;
+      }
+
+      .chart-box {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 20px;
+      }
+
+      .chart-box h2 {
+        font-size: 15px;
+        color: #00ff99;
+        margin: 0 0 16px;
+      }
+
+      /* Hourly chart spans full width */
+      .full-width {
+        grid-column: 1 / -1;
+      }
+
+      canvas {
+        max-height: 300px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Detection Charts</h1>
+    <a href="/">← Back to dashboard</a>
+
+    <div class="charts-grid">
+      <!-- Hourly detections — full width bar chart -->
+      <div class="chart-box full-width">
+        <h2>Detections per hour</h2>
+        <canvas id="hourlyChart"></canvas>
+      </div>
+
+      <!-- Object breakdown — pie chart -->
+      <div class="chart-box">
+        <h2>Object breakdown</h2>
+        <canvas id="labelChart"></canvas>
+      </div>
+
+      <!-- Camera activity — bar chart -->
+      <div class="chart-box">
+        <h2>Camera activity</h2>
+        <canvas id="cameraChart"></canvas>
+      </div>
+    </div>
+
+    <script>
+      // Colour palette for charts
+      const COLORS = [
+        "#00ff99",
+        "#7c6ff7",
+        "#ffaa00",
+        "#ff6b6b",
+        "#00ccff",
+        "#ff99cc",
+      ];
+
+      async function loadCharts() {
+        const response = await fetch("/stats");
+        const data = await response.json();
+
+        // ── Hourly bar chart ──────────────────────────────
+        const hours = Object.keys(data.hourly);
+        const counts = Object.values(data.hourly);
+
+        new Chart(document.getElementById("hourlyChart"), {
+          type: "bar",
+          data: {
+            labels: hours,
+            datasets: [
+              {
+                label: "Detections",
+                data: counts,
+                backgroundColor: "#00ff99",
+                borderRadius: 6,
+              },
+            ],
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: "#888" }, grid: { color: "#222" } },
+              y: { ticks: { color: "#888" }, grid: { color: "#222" } },
+            },
+          },
+        });
+
+        // ── Object breakdown pie chart ────────────────────
+        const labels = Object.keys(data.label_counts);
+        const values = Object.values(data.label_counts);
+
+        new Chart(document.getElementById("labelChart"), {
+          type: "doughnut",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                data: values,
+                backgroundColor: COLORS,
+                borderWidth: 0,
+              },
+            ],
+          },
+          options: {
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: { color: "#e0e0e0", padding: 16 },
+              },
+            },
+          },
+        });
+
+        // ── Camera activity bar chart ─────────────────────
+        const cameras = Object.keys(data.camera_counts);
+        const cameraCounts = Object.values(data.camera_counts);
+
+        new Chart(document.getElementById("cameraChart"), {
+          type: "bar",
+          data: {
+            labels: cameras,
+            datasets: [
+              {
+                label: "Events",
+                data: cameraCounts,
+                backgroundColor: "#7c6ff7",
+                borderRadius: 6,
+              },
+            ],
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: "#888" }, grid: { color: "#222" } },
+              y: { ticks: { color: "#888" }, grid: { color: "#222" } },
+            },
+          },
+        });
+      }
+
+      loadCharts();
+    </script>
+  </body>
+</html>

@@ -8,27 +8,33 @@ import pygame
 pygame.mixer.init()
 
 # ── Database setup ────────────────────────────────────────────
-conn = sqlite3.connect("surveillance.db")
-cursor = conn.cursor()
-cursor.execute("""
-    CREATE TABLE IF NOT EXISTS events (
-        id          INTEGER PRIMARY KEY AUTOINCREMENT,
-        timestamp   TEXT,
-        label       TEXT,
-        confidence  REAL,
-        camera_id   TEXT
-    )
-""")
-conn.commit()
+def init_db():
+    conn = sqlite3.connect("surveillance.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            label TEXT,
+            confidence REAL,
+            camera_id TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
 
 def log_event(label, confidence, camera_id="CAM_01"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    conn = sqlite3.connect("surveillance.db")
+    conn.execute("PRAGMA journal_mode=WAL")
+    cursor = conn.cursor()
     cursor.execute(
         "INSERT INTO events (timestamp, label, confidence, camera_id) VALUES (?, ?, ?, ?)",
         (timestamp, label, round(confidence, 2), camera_id)
     )
     conn.commit()
     print(f"[{timestamp}] LOGGED: {label} ({confidence:.2f}) — {camera_id}")
+    conn.close()
 
 # ── Alert system ──────────────────────────────────────────────
 # Objects that trigger a sound alert
@@ -43,62 +49,71 @@ def play_alert():
 
 # ── Detection ─────────────────────────────────────────────────
 model = YOLO("yolov8n.pt")
-cap   = cv2.VideoCapture("street.mp4")
 
 WATCH_FOR        = ["person", "car", "backpack", "handbag"]
 COOLDOWN_SECONDS = 3
 last_logged      = {}
 last_alerted     = {}   # separate cooldown tracker for alerts
 
-while True:
-    ret, frame = cap.read()
+def run_camera(video_source, camera_id):
+    cap   = cv2.VideoCapture(video_source)
+    while True:
+        ret, frame = cap.read()
 
-    if not ret:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-        continue
+        if not ret:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            continue
 
-    results  = model(frame)
-    annotated = results[0].plot()
+        results  = model(frame)
+        annotated = results[0].plot()
 
-    for box in results[0].boxes:
-        label      = results[0].names[int(box.cls)]
-        confidence = float(box.conf)
+        for box in results[0].boxes:
+            label      = results[0].names[int(box.cls)]
+            confidence = float(box.conf)
 
-        if label in WATCH_FOR and confidence > 0.5:
-            now = datetime.now()
+            if label in WATCH_FOR and confidence > 0.5:
+                now = datetime.now()
 
-            # Log to database with cooldown
-            last_time = last_logged.get(label)
-            if last_time is None or (now - last_time).seconds >= COOLDOWN_SECONDS:
-                log_event(label, confidence)
-                last_logged[label] = now
+                # Log to database with cooldown
+                last_time = last_logged.get(label + camera_id)  # separate cooldown per camera
+                if last_time is None or (now - last_time).seconds >= COOLDOWN_SECONDS:
+                    log_event(label, confidence)
+                    last_logged[label + camera_id] = now
 
-            # Sound alert with its own cooldown (10 seconds so it's not annoying)
-            # Sound + email alert with cooldown
-            last_alert_time = last_alerted.get(label)
-            if label in HIGH_PRIORITY:
-                if last_alert_time is None or (now - last_alert_time).seconds >= 10:
-                    # Sound alert
-                    play_alert()
-                    last_alerted[label] = now
-                    print(f"🔔 ALERT: {label} detected!")
+                # Sound alert with its own cooldown (10 seconds so it's not annoying)
+                # Sound + email alert with cooldown
+                last_alert_time = last_alerted.get(label + camera_id)  # separate cooldown per camera
+                if label in HIGH_PRIORITY:
+                    if last_alert_time is None or (now - last_alert_time).seconds >= 10:
+                        # Sound alert
+                        play_alert()
+                        last_alerted[label + camera_id] = now
+                        print(f"🔔 ALERT: {label} detected!")
 
-                    # Email alert in background thread (so video doesn't freeze)
-                    # Only email every 60 seconds to avoid inbox spam
-                    last_email_time = last_alerted.get(label + "_email")
-                    if last_email_time is None or (now - last_email_time).seconds >= 60:
-                        threading.Thread(
-                            target=send_email_alert,
-                            args=(label, confidence, "CAM_01"),
-                            daemon=True
-                        ).start()
-                        last_alerted[label + "_email"] = now
+                        # Email alert in background thread (so video doesn't freeze)
+                        # Only email every 60 seconds to avoid inbox spam
+                        last_email_time = last_alerted.get(label + camera_id + "_email")
+                        if last_email_time is None or (now - last_email_time).seconds >= 60:
+                            threading.Thread(
+                                target=send_email_alert,
+                                args=(label, confidence, camera_id),
+                                daemon=True
+                            ).start()
+                            last_alerted[label + camera_id + "_email" ] = now
 
-    cv2.imshow("AI Surveillance", annotated)
+        cv2.imshow(f"AI Surveillance - Camera {camera_id}", annotated)
 
-    if cv2.waitKey(30) & 0xFF == ord('q'):
-        break
+        if cv2.waitKey(30) & 0xFF == ord('q'):
+            break
 
-cap.release()
-conn.close()
+init_db()  # Ensure database is initialized before starting cameras
+
+# Creating a thread
+t1 = threading.Thread(target=run_camera, args=("street.mp4", "CAM_01"))
+t2 = threading.Thread(target=run_camera, args=("street2.mp4", "CAM_02"))
+t1.start()
+t2.start()
+t1.join()  # Wait for the thread to complete
+t2.join()  # Wait for the thread to complete
+
 cv2.destroyAllWindows()

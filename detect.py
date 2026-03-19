@@ -7,7 +7,7 @@ from alerter import send_email_alert
 import pygame
 pygame.mixer.init()
 
-# ── Database setup ────────────────────────────────────────────
+# ── Database setup ─────────────────────────────────────────
 def init_db():
     conn = sqlite3.connect("surveillance.db")
     cursor = conn.cursor()

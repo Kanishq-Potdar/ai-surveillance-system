@@ -55,6 +55,17 @@ COOLDOWN_SECONDS = 3
 last_logged      = {}
 last_alerted     = {}   # separate cooldown tracker for alerts
 
+def redact_faces(frame, results):
+    for box in results[0].boxes:
+        label = results[0].names[int(box.cls)]
+        if label == "person":
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            face_bottom = y1 + (y2 - y1) // 4  # Assume face is in upper 1/4 of the person box
+            face_region = frame[y1:face_bottom, x1:x2]
+            blurred_face = cv2.GaussianBlur(face_region, (99, 99), 30)
+            frame[y1:face_bottom, x1:x2] = blurred_face
+    return frame
+
 def run_camera(video_source, camera_id):
     cap   = cv2.VideoCapture(video_source)
     while True:
@@ -65,7 +76,8 @@ def run_camera(video_source, camera_id):
             continue
 
         results  = model(frame)
-        annotated = results[0].plot()
+        frame = redact_faces(frame, results)
+        annotated = results[0].plot(im =frame.copy())
 
         for box in results[0].boxes:
             label      = results[0].names[int(box.cls)]

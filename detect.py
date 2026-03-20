@@ -77,7 +77,7 @@ def run_camera(video_source, camera_id):
 
         results  = model(frame)
         frame = redact_faces(frame, results)
-        annotated = results[0].plot(im =frame.copy())
+        annotated = results[0].plot(img =frame.copy())
 
         for box in results[0].boxes:
             label      = results[0].names[int(box.cls)]

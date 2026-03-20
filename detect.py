@@ -6,22 +6,8 @@ import threading
 from alerter import send_email_alert
 import pygame
 pygame.mixer.init()
+from init_db import init_db
 
-# ── Database setup ─────────────────────────────────────────
-def init_db():
-    conn = sqlite3.connect("surveillance.db")
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT,
-            label TEXT,
-            confidence REAL,
-            camera_id TEXT
-        )
-    """)
-    conn.commit()
-    conn.close()
 
 def log_event(label, confidence, camera_id="CAM_01"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

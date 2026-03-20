@@ -16,5 +16,6 @@ venv/
 Thumbs.db
 desktop.ini
 
-alerter.py
 tempCodeRunnerFile.py
+
+.env

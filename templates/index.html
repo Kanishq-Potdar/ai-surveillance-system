@@ -95,7 +95,21 @@
     </style>
   </head>
   <body>
-    <h1>AI Surveillance Dashboard</h1>
+    <div
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      "
+    >
+      <h1 style="margin: 0">AI Surveillance Dashboard</h1>
+      <div style="font-size: 13px; color: #888">
+        Logged in as <span style="color: #00ff99">{{ username }}</span>
+        ({{ role }}) &nbsp;|&nbsp;
+        <a href="/logout" style="color: #ff4444">Logout</a>
+      </div>
+    </div>
     <a href="/charts" style="color: #00ff99; font-size: 14px">View Charts →</a>
     <!-- Stats bar -->
     <div class="stats">

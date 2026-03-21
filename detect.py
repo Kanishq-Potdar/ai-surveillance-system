@@ -7,6 +7,10 @@ from alerter import send_email_alert
 import pygame
 pygame.mixer.init()
 from init_db import init_db
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 
 def log_event(label, confidence, camera_id="CAM_01"):
@@ -106,9 +110,12 @@ def run_camera(video_source, camera_id):
 
 init_db()  # Ensure database is initialized before starting cameras
 
+cam1 = os.getenv("CAM1_SOURCE", "street.mp4")
+cam2 = os.getenv("CAM2_SOURCE", "street2.mp4")
+
 # Creating a thread
-t1 = threading.Thread(target=run_camera, args=("street.mp4", "CAM_01"))
-t2 = threading.Thread(target=run_camera, args=("street2.mp4", "CAM_02"))
+t1 = threading.Thread(target=run_camera, args=(cam1, "CAM_01"))
+t2 = threading.Thread(target=run_camera, args=(cam2, "CAM_02"))
 t1.start()
 t2.start()
 t1.join()  # Wait for the thread to complete

@@ -2,55 +2,37 @@
 
 ## Why I Built This
 
-I was watching a crime show with my father and there was this scene where detectives
-were going through hours of CCTV footage trying to find one person. It looked
-painful. And I thought — why is someone still doing this manually? If you have a
-description of a person, or their face, why can't you just ask the system to find
-them?
+I was watching a crime show with my father and there was this scene where detectives were going through hours of CCTV footage trying to find one person. It looked painful. And I thought — why is someone still doing this manually? If you have a description of a person, or their face, why can't you just ask the system to find them?
 
 That question turned into this project.
 
 ## What It Does Right Now
 
-At its core this is a system designed to reduce manual watching of footage. Instead
-of a guard staring at screens all day, the AI watches the feeds and generates alerts
-when something worth noticing happens — like a person detected in an area they are
-not supposed to be in.
+At its core this is a system designed to reduce manual watching of footage. Instead of a guard staring at screens all day, the AI watches the feeds and generates alerts when something worth noticing happens — like a person detected in an area they are not supposed to be in.
 
-Every detection gets logged automatically with a timestamp, confidence score, and
-camera ID. A web dashboard lets you see everything in one place, search through past
-events, and view detection trends over time. Faces are blurred automatically to keep
-things privacy compliant.
+Every detection gets logged automatically with a timestamp, confidence score, and camera ID. A web dashboard lets you see everything in one place, search through past events, and view detection trends over time. Faces are blurred automatically to keep things privacy compliant.
 
-It currently supports multiple cameras running simultaneously, sound and email
-alerts, and role based access so different people see only what they need to.
+It currently supports multiple cameras running simultaneously, sound and email alerts, and role based access so different people see only what they need to.
 
 ## Where It's Going
 
-The foundation is done but the more interesting work is still ahead. The idea is
-to move beyond simple labels like "person detected" toward something more useful —
-logs that actually describe what happened in plain English, generated automatically.
-From there, a search bar that understands natural language queries would let you
-type something like "show me all incidents near the entrance after 8pm" and get
-real results back instead of scrolling through a table.
+The foundation is done but the more interesting work is still ahead. The idea is to move beyond simple labels like "person detected" toward something more useful — logs that actually describe what happened in plain English, generated automatically. From there, a search bar that understands natural language queries would let you type something like "show me all incidents near the entrance after 8pm" and get real results back instead of scrolling through a table.
 
-Eventually the goal is something closer to what sparked the idea — give the system
-a description or a face and let it find the person across all footage automatically.
-That part is still being figured out.
+Eventually the goal is something closer to what sparked the idea — give the system a description or a face and let it find the person across all footage automatically. That part is still being figured out.
 
 ## How It All Fits Together
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    Video Sources                     │
-│  [Camera 1]   [Camera 2]   [Camera N]  [RTSP Stream] │
+│                    Video Sources                    │
+│  [Camera 1]   [Camera 2]   [Camera N]  [RTSP Stream]│
 └──────────────────────┬──────────────────────────────┘
                        │ frames
                        ▼
 ┌─────────────────────────────────────────────────────┐
-│              AI Detection Engine (YOLOv8)            │
-│     Detects: person, car, bag, restricted entry      │
-│     Runs in parallel threads — one per camera        │
+│              AI Detection Engine (YOLOv8)           │
+│     Detects: person, car, bag, restricted entry     │
+│     Runs in parallel threads — one per camera       │
 └───────┬──────────────────────────┬──────────────────┘
         │ events                   │ faces
         ▼                          ▼
@@ -187,25 +169,18 @@ they share the same database.
 
 Built phase by phase, each adding a new layer:
 
-- **Phase 1** — YOLOv8 running on a video file, bounding boxes drawn,
-  detections logged to SQLite
+- **Phase 1** — YOLOv8 running on a video file, bounding boxes drawn, detections logged to SQLite
 - **Phase 2** — Sound alerts via Pygame, email alerts via Gmail SMTP
 - **Phase 3** — Flask dashboard with live event feed, search, and stats
-- **Phase 4** — Charts showing detections per hour, object breakdown,
-  camera activity
+- **Phase 4** — Charts showing detections per hour, object breakdown, camera activity
 - **Phase 5** — Multi-camera support using Python threading
 - **Phase 6** — Face redaction using YOLO person bounding boxes
-- **Phase 7** — User authentication, role based access, secrets moved
-  to environment variables
+- **Phase 7** — User authentication, role based access, secrets moved to environment variables
 
 ## What's Next
 
-- **Gemini/AI integration** — generate natural language descriptions of
-  events instead of just labels, and a search bar that understands plain
-  English queries
-- **Person search** — describe someone or upload a face and find them
-  across all footage automatically
-- **IoT integration** — connect with door sensors, motion detectors,
-  and other building systems
+- **Gemini/AI integration** — generate natural language descriptions of events instead of just labels, and a search bar that understands plain English queries
+- **Person search** — describe someone or upload a face and find them across all footage automatically
+- **IoT integration** — connect with door sensors, motion detectors, and other building systems
 - **Edge deployment** — run detection on device without needing internet
 - **Mobile alerts** — push notifications to a phone instead of just email
